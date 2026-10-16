@@ -31,7 +31,7 @@ class CreateProductsTable extends Migration
             ],
             'category' => [
                 'type'       => 'ENUM',
-                'constraint' => ['women', 'men', 'accessories', 'bags'],
+                'constraint' => ['home_living', 'gardening', 'construction', 'craft_utility', 'agriculture', 'women', 'men', 'accessories', 'bags'],
                 'null'       => false,
             ],
             'stock' => [

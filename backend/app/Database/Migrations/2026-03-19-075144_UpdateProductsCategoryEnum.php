@@ -8,17 +8,19 @@ class UpdateProductsCategoryEnum extends Migration
 {
     public function up()
     {
-        // Update the category ENUM to COCOIR product categories
-        $this->db->query("
-            ALTER TABLE `products`
-            MODIFY COLUMN `category` ENUM(
-                'home_living',
-                'gardening',
-                'construction',
-                'craft_utility',
-                'agriculture'
-            ) NOT NULL
-        ");
+        if ($this->db->DBDriver === 'MySQLi') {
+            // Update the category ENUM to COCOIR product categories
+            $this->db->query("
+                ALTER TABLE `products`
+                MODIFY COLUMN `category` ENUM(
+                    'home_living',
+                    'gardening',
+                    'construction',
+                    'craft_utility',
+                    'agriculture'
+                ) NOT NULL
+            ");
+        }
     }
 public function down()
 {

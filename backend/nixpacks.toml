@@ -1,20 +1,8 @@
 [phases.setup]
-nixPkgs = [
-    "php82",
-    "php82Extensions.mysqli",
-    "php82Extensions.pdo_mysql",
-    "php82Extensions.intl",
-    "php82Extensions.mbstring",
-    "php82Extensions.curl",
-    "php82Extensions.fileinfo",
-    "composer"
-]
+nixPkgs = ["php83", "php83Extensions.intl", "php83Extensions.mbstring", "php83Extensions.mysqli", "php83Extensions.pdo_mysql", "php83Extensions.pdo_sqlite", "php83Extensions.sqlite3", "php83Extensions.gd", "php83Extensions.zip", "php83Packages.composer"]
 
 [phases.install]
-cmds = ["composer install --no-dev --optimize-autoloader"]
-
-[phases.build]
-cmds = ["php spark migrate --all"]
+cmds = ["composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs"]
 
 [start]
-cmd = "php -S 0.0.0.0:$PORT -t public"
+cmd = "sh start.sh"

@@ -38,12 +38,13 @@ class Admin extends BaseController
         ", [$today])->getRowArray();
 
         // Monthly sales
+        $monthPrefix = date('Y-m') . '%';
         $monthRow = $db->query("
             SELECT COALESCE(SUM(total_amount),0) as total
             FROM orders
-            WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())
+            WHERE created_at LIKE ?
             AND status != 'cancelled' AND deleted_at IS NULL
-        ")->getRowArray();
+        ", [$monthPrefix])->getRowArray();
 
         // Order counts by status
         $statusRows = $db->query("
@@ -224,21 +225,21 @@ class Admin extends BaseController
         $productModel = new ProductModel();
 
         // Daily sales for current month
+        $monthPrefix = date('Y-m') . '%';
         $dailySales = $db->query("
             SELECT
                 DATE(created_at) as date,
                 COUNT(*) as orders,
                 COALESCE(SUM(total_amount),0) as revenue,
-                SUM(payment_method = 'instapay') as instapay,
-                SUM(payment_method = 'cod') as cod
+                SUM(CASE WHEN payment_method = 'instapay' THEN 1 ELSE 0 END) as instapay,
+                SUM(CASE WHEN payment_method = 'cod' THEN 1 ELSE 0 END) as cod
             FROM orders
-            WHERE MONTH(created_at) = MONTH(NOW())
-              AND YEAR(created_at) = YEAR(NOW())
+            WHERE created_at LIKE ?
               AND status != 'cancelled'
               AND deleted_at IS NULL
             GROUP BY DATE(created_at)
             ORDER BY date DESC
-        ")->getResultArray();
+        ", [$monthPrefix])->getResultArray();
 
         // Today
         $today = date('Y-m-d');
@@ -251,9 +252,9 @@ class Admin extends BaseController
         $monthRow = $db->query("
             SELECT COALESCE(SUM(total_amount),0) as total
             FROM orders
-            WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())
+            WHERE created_at LIKE ?
             AND status != 'cancelled' AND deleted_at IS NULL
-        ")->getRowArray();
+        ", [$monthPrefix])->getRowArray();
 
         // All-time
         $totalRevRow = $db->query("
@@ -378,11 +379,12 @@ class Admin extends BaseController
         foreach ($fields as $field) {
             $value = $this->request->getPost($field);
             if ($value !== null) {
-                $db->query("
-                    INSERT INTO storefront_settings (setting_key, setting_value)
-                    VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
-                ", [$field, $value]);
+                $exists = $db->table('storefront_settings')->where('setting_key', $field)->countAllResults();
+                if ($exists > 0) {
+                    $db->table('storefront_settings')->where('setting_key', $field)->update(['setting_value' => $value, 'updated_at' => date('Y-m-d H:i:s')]);
+                } else {
+                    $db->table('storefront_settings')->insert(['setting_key' => $field, 'setting_value' => $value, 'updated_at' => date('Y-m-d H:i:s')]);
+                }
             }
         }
 
@@ -392,11 +394,12 @@ class Admin extends BaseController
             if ($file && $file->isValid() && !$file->hasMoved()) {
                 $newName = $file->getRandomName();
                 $file->move(FCPATH . 'images', $newName);
-                $db->query("
-                    INSERT INTO storefront_settings (setting_key, setting_value)
-                    VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
-                ", [$imgField, $newName]);
+                $exists = $db->table('storefront_settings')->where('setting_key', $imgField)->countAllResults();
+                if ($exists > 0) {
+                    $db->table('storefront_settings')->where('setting_key', $imgField)->update(['setting_value' => $newName, 'updated_at' => date('Y-m-d H:i:s')]);
+                } else {
+                    $db->table('storefront_settings')->insert(['setting_key' => $imgField, 'setting_value' => $newName, 'updated_at' => date('Y-m-d H:i:s')]);
+                }
             }
         }
 

@@ -8,6 +8,10 @@ class ProductSeeder extends Seeder
 {
     public function run()
     {
+        if ($this->db->table('products')->countAllResults() > 0) {
+            return;
+        }
+
         $products = [
             [
                 'name'        => 'Coir Door Mat',
